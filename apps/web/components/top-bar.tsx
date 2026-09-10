@@ -15,6 +15,7 @@ export function TopBar({ me }: { me: Me }) {
         <Link href="/equipment">设备</Link>
         {me.canManageHaccp ? <Link href="/shifts">班表</Link> : null}
         {me.canManageHaccp ? <Link href="/inspection">检查模式</Link> : null}
+        {me.canManageHaccp ? <Link href="/templates">表单管理</Link> : null}
       </nav>
     </div>
   );

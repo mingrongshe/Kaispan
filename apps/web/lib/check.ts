@@ -76,3 +76,18 @@ export function describeLimit(column: Column, values: Record<string, unknown>): 
   if (limit.tolerance !== undefined) parts.push(`短暂容许 ${limit.tolerance}`);
   return parts.length > 0 ? `${parts.join(" · ")}${unit}` : null;
 }
+
+/**
+ * 这张表能不能就地填。
+ *
+ * 只对「全部字段都是温度 / 单选 / 人员」的表开放 —— 有清单、多行文本的表硬塞进一行
+ * 反而更难用，那些仍然跳完整填表页。
+ * 放在这里而不是客户端组件里，是因为服务端也要用它决定渲不渲染那个按钮。
+ */
+export function canQuickFill(columns: Column[]): boolean {
+  return (
+    columns.length > 0 &&
+    columns.length <= 8 &&
+    columns.every((column) => ["temp", "number", "choice", "person"].includes(column.type))
+  );
+}

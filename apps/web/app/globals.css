@@ -147,6 +147,18 @@ dl.kv dd { margin: 0; }
 .footnotes { color: var(--muted); font-size: 13px; margin-top: 16px; }
 .footnotes p { margin: 4px 0; }
 
+.quickfill { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); width: 100%; }
+.quickfill .fields { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+
+.photos { display: flex; flex-wrap: wrap; gap: 10px; }
+.photos img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
 /* ---------------------------------------------------------------- 月度表与检查模式 */
 
 .sheet { margin-bottom: 28px; }

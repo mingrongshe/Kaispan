@@ -217,6 +217,7 @@ export class EntriesService {
         resolvedBy: { select: { name: true } },
         voidedBy: { select: { name: true } },
         workOrders: { include: { equipment: { select: { id: true, name: true } } } },
+        photos: { select: { id: true, mimeType: true, byteSize: true }, orderBy: { createdAt: "asc" } },
       },
     });
     if (!entry) throw new NotFoundInScopeError();

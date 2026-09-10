@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -11,6 +11,7 @@ import {
   Matches,
   Max,
   Min,
+  ValidateNested,
 } from "class-validator";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -136,6 +137,54 @@ export class MonthQuery {
   @IsOptional()
   @Matches(/^\d{4}-\d{2}$/, { message: "月份格式应该是 YYYY-MM" })
   month?: string;
+}
+
+export class ColumnInputDto {
+  @ApiPropertyOptional({ description: "已有列带原来的 id；新列不传" })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty() @IsString() labelZh!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() labelDe?: string;
+  @ApiProperty({ enum: ["temp", "number", "text", "choice", "checklist", "person", "signature"] })
+  @IsIn(["temp", "number", "text", "choice", "checklist", "person", "signature"])
+  type!: "temp" | "number" | "text" | "choice" | "checklist" | "person" | "signature";
+
+  @ApiPropertyOptional() @IsOptional() @IsString() unit?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() optional?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() multiline?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() noteZh?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() placeholderZh?: string;
+  @ApiPropertyOptional({ type: Object }) @IsOptional() @IsObject() limit?: {
+    min?: number | null;
+    max?: number | null;
+    tolerance?: number | null;
+  };
+  @ApiPropertyOptional({ description: "一行一个，支持「中文|Deutsch」" })
+  @IsOptional()
+  @IsString()
+  optionsText?: string;
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  breachOn?: string[];
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() requireAll?: boolean;
+}
+
+export class SaveTemplateVersionDto {
+  @ApiProperty() @IsString() nameZh!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() nameDe?: string;
+  @ApiProperty({ type: [ColumnInputDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ColumnInputDto)
+  columns!: ColumnInputDto[];
+}
+
+export class SetActiveDto {
+  @ApiProperty() @IsBoolean() active!: boolean;
 }
 
 export class CompleteWorkOrderDto {

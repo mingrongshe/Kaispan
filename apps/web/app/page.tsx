@@ -2,10 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TopBar } from "@/components/top-bar";
 import { apiGet, type Me } from "@/lib/api";
-import { frequencyLabel, SHIFT_LABEL, TIMING_LABEL, type TaskRow } from "@/lib/types";
+import { QuickFill } from "@/components/quick-fill";
+import { canQuickFill } from "@/lib/check";
+import { frequencyLabel, SHIFT_LABEL, TIMING_LABEL, type Column, type TaskRow } from "@/lib/types";
 
 type TasksResponse = { date: string; today: string; tasks: TaskRow[]; missed: { templateId: string; nameZh: string; missing: string[] }[] };
 type MyTasksResponse = { date: string; tasks: TaskRow[] };
+type TemplateColumns = { id: string; columns: Column[] };
 type IssueGroup = {
   key: string;
   templateId: string;
@@ -36,8 +39,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 }
 
 async function EmployeeHome({ query }: { query: string }) {
-  const data = await apiGet<MyTasksResponse>(`/haccp/my-tasks${query}`);
+  const [data, templates] = await Promise.all([
+    apiGet<MyTasksResponse>(`/haccp/my-tasks${query}`),
+    apiGet<TemplateColumns[]>("/haccp/templates"),
+  ]);
   if (!data) return <p className="empty">读不到待办。</p>;
+  const columnsOf = new Map((templates ?? []).map((template) => [template.id, template.columns]));
 
   return (
     <>
@@ -67,6 +74,17 @@ async function EmployeeHome({ query }: { query: string }) {
               <Link className="button primary" href={`/fill/${task.templateId}${query}`}>
                 填写
               </Link>
+              {(() => {
+                const columns = columnsOf.get(task.templateId);
+                return columns && canQuickFill(columns) ? (
+                  <QuickFill
+                    templateId={task.templateId}
+                    entryDate={data.date}
+                    columns={columns}
+                    people={task.assignees}
+                  />
+                ) : null;
+              })()}
             </div>
           </div>
         ))
@@ -76,10 +94,12 @@ async function EmployeeHome({ query }: { query: string }) {
 }
 
 async function ManagerHome({ query }: { query: string }) {
-  const [data, groups] = await Promise.all([
+  const [data, groups, templates] = await Promise.all([
     apiGet<TasksResponse>(`/haccp/tasks${query}`),
     apiGet<IssueGroup[]>("/haccp/manage/issue-groups"),
+    apiGet<TemplateColumns[]>("/haccp/templates"),
   ]);
+  const columnsOf = new Map((templates ?? []).map((template) => [template.id, template.columns]));
   if (!data) return <p className="empty">读不到今天的表。</p>;
 
   const due = data.tasks.filter((task) => task.due.due);
@@ -137,7 +157,7 @@ async function ManagerHome({ query }: { query: string }) {
       <h2>今天要填</h2>
       {due.length === 0 ? <p className="empty">都填完了。</p> : null}
       {due.map((task) => (
-        <TaskCard key={task.templateId} task={task} query={query} />
+        <TaskCard key={task.templateId} task={task} query={query} columns={columnsOf.get(task.templateId)} date={data.date} />
       ))}
 
       {data.missed.length > 0 ? (
@@ -163,7 +183,7 @@ async function ManagerHome({ query }: { query: string }) {
         <>
           <h2>现在不用管的</h2>
           {done.map((task) => (
-            <TaskCard key={task.templateId} task={task} query={query} />
+            <TaskCard key={task.templateId} task={task} query={query} columns={columnsOf.get(task.templateId)} date={data.date} />
           ))}
         </>
       ) : null}
@@ -171,7 +191,17 @@ async function ManagerHome({ query }: { query: string }) {
   );
 }
 
-function TaskCard({ task, query }: { task: TaskRow; query: string }) {
+function TaskCard({
+  task,
+  query,
+  columns,
+  date,
+}: {
+  task: TaskRow;
+  query: string;
+  columns?: Column[];
+  date: string;
+}) {
   return (
     <div className="card">
       <div className="row">
@@ -212,6 +242,9 @@ function TaskCard({ task, query }: { task: TaskRow; query: string }) {
         <Link className="button primary" href={`/fill/${task.templateId}${query}`}>
           填写
         </Link>
+        {task.due.due && columns && canQuickFill(columns) ? (
+          <QuickFill templateId={task.templateId} entryDate={date} columns={columns} people={task.assignees} />
+        ) : null}
       </div>
     </div>
   );

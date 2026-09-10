@@ -5,7 +5,7 @@
     "moduleResolution": "Node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node"],
+    "types": ["node", "multer"],
     "outDir": "dist",
     "rootDir": ".",
     "baseUrl": ".",

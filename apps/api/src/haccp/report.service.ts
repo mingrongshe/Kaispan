@@ -167,6 +167,36 @@ export class ReportService {
   }
 
   /**
+   * 导出 CSV。带 BOM，Excel 打开中文不乱码 —— 不带的话店长第一次打开就是一堆问号。
+   */
+  async monthlyCsv(ctx: CurrentContext, templateId: string, month: string): Promise<string> {
+    const report = await this.monthly(ctx, templateId, month);
+    const header = [
+      report.layout === "monthly_grid" ? "日" : "日期",
+      ...report.template.columns.map((column) => column.label.zh + (column.unit ? ` (${column.unit})` : "")),
+      "填写人",
+      "状态",
+      "补填",
+    ];
+
+    const lines = [header.map(csvCell).join(",")];
+    for (const row of report.rows) {
+      if (row.future) continue;
+      lines.push(
+        [
+          report.layout === "monthly_grid" ? String(row.day) : row.date,
+          ...row.cells.map((cell) => (cell.breach ? `${cell.value} !` : cell.value)),
+          row.filledByName ?? "",
+          row.entryId ? statusLabel(row.status) : row.isToday ? "今天还没填" : "空着",
+          row.isLate ? "是" : "",
+        ].map(csvCell).join(","),
+      );
+    }
+
+    return `\ufeff${lines.join("\r\n")}\r\n`;
+  }
+
+  /**
    * 检查模式：一次给出这个月全部七张表，只读、没有任何操作按钮，屏幕转过去就能给检查员看。
    * 顶部带一段「检查前自查」——哪张表本月缺记录、缺多少 —— 打印时隐藏，那是给店长看的，不是给检查员看的。
    */
@@ -206,4 +236,15 @@ function formatValue(value: unknown): string {
   if (value === undefined || value === null || value === "") return "";
   if (Array.isArray(value)) return value.map(String).join("、");
   return String(value);
+}
+
+function csvCell(value: string): string {
+  return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+}
+
+function statusLabel(status: EntryStatus | null): string {
+  if (status === "submitted") return "已完成";
+  if (status === "issue_open") return "有异常待处理";
+  if (status === "issue_resolved") return "异常已处理";
+  return "";
 }

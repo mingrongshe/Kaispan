@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { TopBar } from "@/components/top-bar";
 import { apiGet, type Me } from "@/lib/api";
 import { STATUS_LABEL, type Column } from "@/lib/types";
-import { voidEntryAction } from "../actions";
+import { uploadPhotoAction, voidEntryAction } from "../actions";
 
 type EntryDetail = {
   id: string;
@@ -23,6 +23,7 @@ type EntryDetail = {
   resolutionNote: string | null;
   resolvedByName: string | null;
   workOrders: { id: string; note: string; result: string | null; completedAt: string | null }[];
+  photos: { id: string; mimeType: string; byteSize: number }[];
   template: { id: string; nameZh: string; version: number; columns: Column[]; footnotes: { zh: string }[] | null };
 };
 
@@ -131,6 +132,35 @@ export default async function RecordPage({
           ) : null}
         </dl>
       </div>
+
+      {entry.breaches && Object.keys(entry.breaches).length > 0 ? (
+        <div className="card">
+          <div className="name">现场照片</div>
+          <p className="sub" style={{ marginTop: 0 }}>
+            只有判为超标的记录才留照片，最多 3 张。上传和下载都走后端，记录里存的是相对路径。
+          </p>
+          {entry.photos.length > 0 ? (
+            <div className="photos">
+              {entry.photos.map((photo) => (
+                <a key={photo.id} href={`/photo/${photo.id}`} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/photo/${photo.id}`} alt="现场照片" />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="empty">还没有照片。</p>
+          )}
+
+          {!entry.voidedAt && entry.photos.length < 3 && (entry.filledBy.id === me.userId || me.canManageHaccp) ? (
+            <form action={uploadPhotoAction} className="row" style={{ marginTop: 10 }}>
+              <input type="hidden" name="id" value={entry.id} />
+              <input type="file" name="file" accept="image/*" capture="environment" className="grow" />
+              <button type="submit">加一张</button>
+            </form>
+          ) : null}
+        </div>
+      ) : null}
 
       {entry.workOrders.length > 0 ? (
         <div className="card">

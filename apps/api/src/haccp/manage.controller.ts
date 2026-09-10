@@ -5,7 +5,17 @@ import { Ctx } from "../context/ctx.decorator";
 import type { CurrentContext } from "../context/current-context";
 import { SessionGuard } from "../context/session.guard";
 import { todayInStore } from "../domain/dates";
-import { AssignTemplateDto, MonthQuery, ResolveDto, SetShiftDefinitionDto, SetShiftDto, WeekQuery } from "./haccp.dto";
+import {
+  AssignTemplateDto,
+  MonthQuery,
+  ResolveDto,
+  SaveTemplateVersionDto,
+  SetActiveDto,
+  SetShiftDefinitionDto,
+  SetShiftDto,
+  WeekQuery,
+} from "./haccp.dto";
+import { EditorService } from "./editor.service";
 import { ManageService } from "./manage.service";
 import { ReportService } from "./report.service";
 
@@ -17,7 +27,40 @@ export class ManageController {
   constructor(
     private readonly manage: ManageService,
     private readonly reports: ReportService,
+    private readonly editor: EditorService,
   ) {}
+
+  // ---------------------------------------------------------------- 表单管理与编辑器
+
+  @Get("templates")
+  @RequireHaccpManage()
+  templates(@Ctx() ctx: CurrentContext) {
+    return this.editor.list(ctx);
+  }
+
+  @Get("templates/:id/editor")
+  @RequireHaccpManage()
+  templateEditor(@Ctx() ctx: CurrentContext, @Param("id") id: string) {
+    return this.editor.editor(ctx, id);
+  }
+
+  /** 保存生成新版本，旧版本原样留着，已有记录锁在自己那一版 */
+  @Post("templates/:id/versions")
+  @RequireHaccpManage()
+  saveVersion(@Ctx() ctx: CurrentContext, @Param("id") id: string, @Body() body: SaveTemplateVersionDto) {
+    return this.editor.saveVersion(ctx, id, {
+      nameZh: body.nameZh,
+      nameDe: body.nameDe ?? "",
+      columns: body.columns,
+    });
+  }
+
+  /** 停用 = 归档，不物理删除。已有记录的表被真删掉，卫生局资料包会出洞。 */
+  @Put("templates/:id/active")
+  @RequireHaccpManage()
+  setActive(@Ctx() ctx: CurrentContext, @Param("id") id: string, @Body() body: SetActiveDto) {
+    return this.editor.setActive(ctx, id, body.active);
+  }
 
   /** 检查模式：一次给出这个月全部表，只读，屏幕转过去就能给检查员看 */
   @Get("inspection")

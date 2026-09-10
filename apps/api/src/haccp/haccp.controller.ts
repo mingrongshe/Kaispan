@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 import { ApiTags } from "@nestjs/swagger";
 import { HaccpAccessGuard, RequireHaccpFill } from "../access/haccp-access.guard";
 import { Ctx } from "../context/ctx.decorator";
@@ -97,6 +98,22 @@ export class HaccpController {
   }
 
   /** 前端即时反馈用的试算。能不能提交仍由 submit 说了算。 */
+  /** CSV 导出，带 BOM，Excel 打开中文不乱码 */
+  @Get("templates/:id/monthly.csv")
+  @RequireHaccpFill()
+  async monthlyCsv(
+    @Ctx() ctx: CurrentContext,
+    @Param("id") id: string,
+    @Query() query: MonthQuery,
+    @Res() res: Response,
+  ): Promise<void> {
+    const month = query.month ?? todayInStore().slice(0, 7);
+    const csv = await this.reports.monthlyCsv(ctx, id, month);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="haccp-${month}.csv"`);
+    res.send(csv);
+  }
+
   @Post("templates/:id/check")
   @RequireHaccpFill()
   async check(@Ctx() ctx: CurrentContext, @Param("id") id: string, @Body() body: SaveDraftDto) {
@@ -175,6 +192,7 @@ export class HaccpController {
       resolutionNote: entry.resolutionNote,
       resolvedByName: entry.resolvedBy?.name ?? null,
       workOrders: entry.workOrders,
+      photos: entry.photos,
       template: {
         id: loaded.template.id,
         nameZh: loaded.version.nameZh,

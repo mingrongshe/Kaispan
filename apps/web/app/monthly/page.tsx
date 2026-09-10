@@ -82,6 +82,11 @@ export default async function MonthlyPage({
               去填这张表
             </Link>
           ) : null}
+          {report.stats.entries > 0 ? (
+            <a className="button" href={`/export?templateId=${chosen}&month=${report.month}`}>
+              导出 CSV
+            </a>
+          ) : null}
           {me.canManageHaccp ? (
             <Link className="button" href={`/inspection?month=${report.month}`}>
               检查模式

@@ -8,16 +8,18 @@ HACCP 表单模块的独立开发仓库。第一阶段在这里做出可以真�
 
 ## 现在做到哪一步
 
-第一批的业务闭环已经能真用：派单、填表（草稿 / 临界值判定 / 纠正措施）、补填、作废重填、
-店长异常处理与维修单、设备台账与温度趋势、漏填补救、最小班表、月度表与检查模式（可直接打印
-交给卫生局），前端页面都接上了。第一批只差异常照片附件。详见 [`docs/status.md`](docs/status.md)。
+`docs/product-scope.md` 里第一批和第二批的条目全部做完了：派单、填表（草稿 / 临界值判定 /
+纠正措施）、补填、作废重填、异常照片、店长异常处理与维修单、设备台账与温度趋势、漏填补救、
+最小班表、月度表与检查模式（可直接打印交给卫生局）、表单编辑器（版本化）、CSV 导出、
+主页行内快填。详见 [`docs/status.md`](docs/status.md)。
 
 ## 需要什么
 
 - Node 22
 - pnpm 10.12.1（`corepack enable && corepack prepare pnpm@10.12.1 --activate`）
 - PostgreSQL。不用自己装：`pnpm pg:start` 会在 `.pgdata/` 起一个真实的 PostgreSQL 17
-  （`embedded-postgres`，官方二进制，不是 mock）。想接 Neon、Supabase 或自建库，改 `.env`
+  （二进制来自 `@embedded-postgres/<平台>` 这个 npm 包，官方构建，不是 mock；
+  `tools/pg.mjs` 直接驱动 `initdb` 和 `pg_ctl`）。想接 Neon、Supabase 或自建库，改 `.env`
   里的 `DATABASE_URL` 就行，那时不需要 `pnpm pg:start`。
 
 ## 跑起来

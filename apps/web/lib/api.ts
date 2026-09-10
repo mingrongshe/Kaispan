@@ -70,3 +70,27 @@ export async function login(loginCode: string): Promise<string | null> {
   const body = (await response.json()) as { token: string };
   return body.token;
 }
+
+/** 上传照片：把浏览器传上来的 File 原样转发给后端 */
+export async function apiUpload(
+  path: string,
+  file: File,
+): Promise<{ ok: true; data: unknown } | { ok: false; error: ApiError }> {
+  const value = await token();
+  if (!value) return { ok: false, error: { code: "NOT_AUTHENTICATED", message: "登录已经过期" } };
+
+  const body = new FormData();
+  body.append("file", file, file.name);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${value}` },
+    body,
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = payload as Partial<ApiError>;
+    return { ok: false, error: { code: error.code ?? "UNKNOWN", message: error.message ?? "上传失败" } };
+  }
+  return { ok: true, data: payload };
+}

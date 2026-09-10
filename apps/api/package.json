@@ -10,10 +10,10 @@
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "test": "vitest run --project unit",
-    "test:integration": "node ../../tools/pg.mjs ensure && node ../../tools/migrate.mjs --test && vitest run --project integration",
-    "db:migrate": "node ../../tools/pg.mjs ensure && node ../../tools/migrate.mjs",
+    "test:integration": "node ../../tools/pg.mjs start && node ../../tools/migrate.mjs --test && vitest run --project integration",
+    "db:migrate": "node ../../tools/pg.mjs start && node ../../tools/migrate.mjs",
     "db:deploy": "node ../../tools/migrate.mjs",
-    "db:seed": "node ../../tools/pg.mjs ensure && node ../../tools/migrate.mjs && tsx prisma/seed.ts"
+    "db:seed": "node ../../tools/pg.mjs start && node ../../tools/migrate.mjs && tsx prisma/seed.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -30,6 +30,7 @@
     "class-validator": "0.15.1",
     "cookie-parser": "1.4.7",
     "express": "5.2.1",
+    "multer": "2.3.0",
     "pg": "8.23.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
@@ -39,6 +40,7 @@
     "@swc/core": "1.15.2",
     "@types/cookie-parser": "1.4.9",
     "@types/express": "5.0.5",
+    "@types/multer": "2.2.0",
     "@types/node": "22.19.2",
     "@types/pg": "8.23.1",
     "@types/supertest": "6.0.3",

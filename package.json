@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "bootstrap": "node tools/pg.mjs ensure && pnpm db:generate && pnpm --filter @kaispan-haccp/api db:migrate && pnpm --filter @kaispan-haccp/api db:seed",
+    "bootstrap": "node tools/pg.mjs start && pnpm db:generate && pnpm --filter @kaispan-haccp/api db:migrate && pnpm --filter @kaispan-haccp/api db:seed",
     "dev": "pnpm --parallel --filter @kaispan-haccp/api --filter @kaispan-haccp/web dev",
     "typecheck": "pnpm -r --sequential typecheck",
     "test": "pnpm --filter @kaispan-haccp/api test",
@@ -15,7 +15,7 @@
     "db:generate": "pnpm --filter @kaispan-haccp/api exec prisma generate",
     "db:migrate": "pnpm --filter @kaispan-haccp/api db:migrate",
     "db:seed": "pnpm --filter @kaispan-haccp/api db:seed",
-    "pg:start": "node tools/pg.mjs ensure",
+    "pg:start": "node tools/pg.mjs start",
     "pg:stop": "node tools/pg.mjs stop"
   },
   "devDependencies": {
