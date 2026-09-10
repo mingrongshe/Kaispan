@@ -70,7 +70,7 @@ describe("权限与租户隔离（真实 PostgreSQL）", () => {
       .set("Authorization", `Bearer ${martin.managerToken}`);
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].status).toBe("issue_open");
+    expect(response.body[0].templateKey).toBe("storage-temp");
   });
 
   it("另一个 organization 的店长看不到这边的记录", async () => {
