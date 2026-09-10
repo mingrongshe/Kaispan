@@ -1,0 +1,359 @@
+// KaiSpan HACCP 模块数据模型
+//
+// 两条来自 docs/kaispan-compatibility.md 的硬规矩贯穿全部模型：
+//   1. 属于客户公司的业务模型都带 organizationId；属于具体门店的同时带 unitId。
+//   2. 已提交或经店长处理的记录不做无痕物理删除，只作废（voidedAt）。
+// 第一版演示只跑一家公司一家门店，但字段一个都不能省 —— 将来接进 KaiSpan 时最难补的就是这两个。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7 起，连接串不写在 schema 里，走 prisma.config.ts 和 driver adapter。
+// 好处是客户端不再依赖 Rust 引擎二进制，只用 node-postgres。
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- 租户与人
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  units Unit[]
+  users User[]
+}
+
+/// 一家具体的餐馆门店
+model Unit {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  users        User[]
+
+  @@index([organizationId])
+}
+
+enum Role {
+  employee
+  store_manager
+}
+
+/// 界面语言跟员工档案里的沟通语言走（产品范围第七节）
+enum Locale {
+  zh
+  de
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  unitId         String
+  name           String
+  role           Role
+  locale         Locale   @default(zh)
+  /// 演示登录用的登录码。正式接入 KaiSpan 时由 Supabase Auth 取代。
+  loginCode      String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  unit         Unit         @relation(fields: [unitId], references: [id])
+
+  sessions         Session[]
+  shiftAssignments ShiftAssignment[]
+  entriesCreated   FormEntry[]       @relation("entryCreatedBy")
+  entriesVoided    FormEntry[]       @relation("entryVoidedBy")
+  entriesResolved  FormEntry[]       @relation("entryResolvedBy")
+  workOrdersOpened WorkOrder[]       @relation("workOrderOpenedBy")
+  workOrdersClosed WorkOrder[]       @relation("workOrderCompletedBy")
+  files            FileObject[]
+
+  @@index([organizationId, unitId])
+}
+
+/// 服务端会话。前端只带这个 token，不在请求体里声明自己是谁、属于哪家店。
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------- 最小班表
+
+/// 开店 / 中班 / 收店（产品范围代定 9）
+enum ShiftKind {
+  opening
+  midday
+  closing
+}
+
+/// 门店自己的班次时间，店长可改
+model ShiftDefinition {
+  id             String   @id @default(cuid())
+  organizationId String
+  unitId         String
+  kind           ShiftKind
+  startMinutes   Int
+  endMinutes     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([unitId, kind])
+  @@index([organizationId, unitId])
+}
+
+/// 谁哪天上哪个班。派单不点名，责任人是当天从这张表推导出来的。
+model ShiftAssignment {
+  id             String    @id @default(cuid())
+  organizationId String
+  unitId         String
+  date           DateTime  @db.Date
+  kind           ShiftKind
+  userId         String
+  createdAt      DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([unitId, date, kind, userId])
+  @@index([organizationId, unitId, date])
+}
+
+// ---------------------------------------------------------------- 表单模板
+
+enum FormLayout {
+  monthly_grid
+  log
+  training
+}
+
+enum FrequencyKind {
+  daily
+  weekly
+  yearly
+}
+
+/// 这张表在一天里的什么时候做，对应原型的 timing
+enum FormTiming {
+  morning
+  day
+  evening
+  any
+}
+
+model FormTemplate {
+  id             String        @id @default(cuid())
+  organizationId String
+  unitId         String
+  /// 原型里的模板标识，例如 storage-temp / cleaning / pest-control
+  key            String
+  layout         FormLayout
+  frequencyKind  FrequencyKind
+  /// 每周期次数：daily 为 1，weekly 可能是 1 或 2，yearly 为 1
+  frequencyTimes Int           @default(1)
+  timing         FormTiming    @default(any)
+  active         Boolean       @default(true)
+  currentVersion Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  versions    FormTemplateVersion[]
+  assignments FormAssignment[]
+  entries     FormEntry[]
+  equipment   Equipment[]
+
+  @@unique([unitId, key])
+  @@index([organizationId, unitId])
+}
+
+/// 模板按版本存，记录锁定自己那一版，改版之后旧记录不会被新列名串掉。
+/// 第一批只写入 v1（种子数据），编辑界面在第二批。
+model FormTemplateVersion {
+  id         String   @id @default(cuid())
+  templateId String
+  version    Int
+  nameZh     String
+  nameDe     String
+  /// 列定义，结构照 references/haccp-prototype.html 里的 haccpTemplates()
+  columns    Json
+  /// 表头字段：operation / inspector，员工培训表另有 referent / topic
+  header     Json?
+  /// 表底的临界值与纠正措施说明，中德双语
+  footnotes  Json?
+  createdAt  DateTime @default(now())
+
+  template FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+}
+
+/// 派单：表 → 班次。不点名，责任人当天从 ShiftAssignment 推导。
+model FormAssignment {
+  id             String    @id @default(cuid())
+  organizationId String
+  unitId         String
+  templateId     String
+  shiftKind      ShiftKind
+  effectiveFrom  DateTime  @db.Date
+  effectiveTo    DateTime? @db.Date
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  template FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, unitId, templateId])
+}
+
+// ---------------------------------------------------------------- 记录
+
+enum EntryStatus {
+  /// 草稿只有本人看得到，不进店长列表、不判超标、不算这张表当天填过
+  draft
+  /// 提交后没有任何一项超标，提交即完成，店长不逐条签
+  submitted
+  /// 提交后至少一项超标，进店长的待处理
+  issue_open
+  /// 店长处理完（温度类走维修单，其余写处理结果）
+  issue_resolved
+}
+
+model FormEntry {
+  id             String      @id @default(cuid())
+  organizationId String
+  unitId         String
+  templateId     String
+  /// 锁定提交时那一版模板
+  templateVersion Int
+  /// 表上写的那一天，不是提交时间
+  entryDate      DateTime    @db.Date
+  status         EntryStatus @default(draft)
+
+  /// 各列的值，key 是列 id
+  values         Json
+  /// 判为超标的列 id 及原因
+  breaches       Json?
+  /// 有超标时必填
+  correctiveAction String?
+  /// 表头快照：operation / inspector /（培训表）referent / topic
+  header         Json?
+
+  /// 过了记录日期的午夜才提交 = 补填，必须写原因（至少 5 个字）
+  isLate         Boolean     @default(false)
+  lateReason     String?
+
+  createdById    String
+  submittedAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  /// 作废是标记不是删除，理由必填
+  voidedAt       DateTime?
+  voidedById     String?
+  voidReason     String?
+
+  /// 店长处理
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolutionNote String?
+
+  template    FormTemplate @relation(fields: [templateId], references: [id])
+  createdBy   User         @relation("entryCreatedBy", fields: [createdById], references: [id])
+  voidedBy    User?        @relation("entryVoidedBy", fields: [voidedById], references: [id])
+  resolvedBy  User?        @relation("entryResolvedBy", fields: [resolvedById], references: [id])
+  workOrders  WorkOrder[]
+  photos      FileObject[]
+
+  @@index([organizationId, unitId, templateId, entryDate])
+  @@index([organizationId, unitId, status])
+  @@index([createdById, status])
+}
+
+// ---------------------------------------------------------------- 设备与维修
+
+enum EquipmentStatus {
+  ok
+  needs_repair
+  out_of_service
+}
+
+/// 把「冷藏柜 2」从表单的一列变成一台机器
+model Equipment {
+  id             String          @id @default(cuid())
+  organizationId String
+  unitId         String
+  name           String
+  location       String?
+  brand          String?
+  model          String?
+  warrantyUntil  DateTime?       @db.Date
+  status         EquipmentStatus @default(ok)
+
+  /// 关联到某张表的某个测量点，于是能读出这台机器的温度曲线
+  linkTemplateId String?
+  linkColumnId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  linkTemplate FormTemplate? @relation(fields: [linkTemplateId], references: [id])
+  workOrders   WorkOrder[]
+
+  @@index([organizationId, unitId])
+}
+
+/// 温度类超标必须挂到一台设备并开维修单，填了结果才算闭环（产品范围第六节）
+model WorkOrder {
+  id             String    @id @default(cuid())
+  organizationId String
+  unitId         String
+  equipmentId    String
+  /// 由哪条异常记录引出来的
+  entryId        String?
+  note           String
+  result         String?
+  openedById     String
+  openedAt       DateTime  @default(now())
+  completedById  String?
+  completedAt    DateTime?
+
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  entry       FormEntry? @relation(fields: [entryId], references: [id])
+  openedBy    User      @relation("workOrderOpenedBy", fields: [openedById], references: [id])
+  completedBy User?     @relation("workOrderCompletedBy", fields: [completedById], references: [id])
+
+  @@index([organizationId, unitId, equipmentId])
+}
+
+// ---------------------------------------------------------------- 文件
+
+/// 异常附件：判为超标的记录最多附 3 张照片（产品范围代定 7）。
+/// 只存相对 key，不存开发者电脑路径，也不存永久公开 URL。
+model FileObject {
+  id             String   @id @default(cuid())
+  organizationId String
+  unitId         String
+  storageKey     String   @unique
+  mimeType       String
+  byteSize       Int
+  entryId        String?
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  entry     FormEntry? @relation(fields: [entryId], references: [id])
+  createdBy User       @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, unitId])
+}

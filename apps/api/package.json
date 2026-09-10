@@ -1,0 +1,53 @@
+{
+  "name": "@kaispan-haccp/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "prebuild": "prisma generate",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "test": "vitest run --project unit",
+    "test:integration": "node ../../tools/pg.mjs ensure && node ../../tools/migrate.mjs --test && vitest run --project integration",
+    "db:migrate": "node ../../tools/pg.mjs ensure && node ../../tools/migrate.mjs",
+    "db:deploy": "node ../../tools/migrate.mjs",
+    "db:seed": "node ../../tools/pg.mjs ensure && node ../../tools/migrate.mjs && tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.2.3",
+    "@nestjs/config": "4.0.4",
+    "@nestjs/core": "11.2.3",
+    "@nestjs/platform-express": "11.2.3",
+    "@nestjs/swagger": "11.4.7",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "cookie-parser": "1.4.7",
+    "express": "5.2.1",
+    "pg": "8.23.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "11.2.3",
+    "@swc/core": "1.15.2",
+    "@types/cookie-parser": "1.4.9",
+    "@types/express": "5.0.5",
+    "@types/node": "22.19.2",
+    "@types/pg": "8.23.1",
+    "@types/supertest": "6.0.3",
+    "embedded-postgres": "17.10.0-beta.17",
+    "prisma": "7.10.0",
+    "supertest": "7.1.4",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "unplugin-swc": "1.5.7",
+    "vitest": "4.1.11"
+  }
+}

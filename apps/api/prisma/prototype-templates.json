@@ -1,0 +1,809 @@
+[
+  {
+    "id": "storage-temp",
+    "timing": "morning",
+    "icon": {
+      "zh": "°C",
+      "de": "°C"
+    },
+    "name": {
+      "zh": "储存 / 冷藏温度",
+      "de": "Lager- / Kühltemperaturen",
+      "en": "Storage / Cooling temperatures"
+    },
+    "layout": "monthly-grid",
+    "frequency": {
+      "kind": "daily"
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "inspector": "Martin"
+    },
+    "columns": [
+      {
+        "id": "c1",
+        "label": {
+          "zh": "冷藏间",
+          "de": "Kühlraum"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limit": {
+          "min": 4,
+          "max": 7
+        },
+        "note": {
+          "zh": "绞肉 / 禽类 max +4°C，鱼 max +2°C",
+          "de": "Hackfleisch/Geflügel max. +4 °C, Fisch max. +2 °C"
+        }
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "冷藏柜 1",
+          "de": "Kühltheke 1"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limit": {
+          "min": 4,
+          "max": 7
+        }
+      },
+      {
+        "id": "c3",
+        "label": {
+          "zh": "冷藏柜 2",
+          "de": "Kühltheke 2"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limit": {
+          "min": 4,
+          "max": 7
+        }
+      },
+      {
+        "id": "c4",
+        "label": {
+          "zh": "冷藏 1",
+          "de": "Kühlschrank 1"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limit": {
+          "min": 4,
+          "max": 7
+        }
+      },
+      {
+        "id": "c5",
+        "label": {
+          "zh": "冷藏 2",
+          "de": "Kühlschrank 2"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limit": {
+          "min": 4,
+          "max": 7
+        }
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "临界值：冷冻 / 冷冻间 −18 °C（短暂 −15 °C）；冷藏 +4 ~ +7 °C；绞肉 / 禽类 max +4 °C；鱼 max +2 °C；EU 绞肉未开封 +2 °C；冰淇淋柜（售卖）−10 °C。",
+        "de": "Grenzwerte: Tiefkühler/Tiefkühlraum −18 °C (kurzzeitig −15 °C); Kühlschrank +4 bis +7 °C; Hackfleisch/Geflügel max. +4 °C; Fisch max. +2 °C; Hackfleisch aus EU-Betrieben, ungeöffnet +2 °C; Eistheke zur Ausgabe −10 °C."
+      },
+      {
+        "zh": "纠正措施：出现感官变化时移出并可能废弃货物，通知负责人；修正冷藏温度或向专业公司报修。",
+        "de": "Korrekturmaßnahme: Bei sensorischen Veränderungen Ware entfernen und ggf. entsorgen, verantwortliche Person informieren. Kühltemperatur korrigieren oder Reparaturauftrag an eine Fachfirma erteilen."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  },
+  {
+    "id": "cleaning",
+    "timing": "evening",
+    "icon": {
+      "zh": "洁",
+      "de": "RD"
+    },
+    "name": {
+      "zh": "清洁与消毒",
+      "de": "Reinigung und Desinfektion",
+      "en": "Cleaning and Disinfection"
+    },
+    "layout": "monthly-grid",
+    "frequency": {
+      "kind": "daily"
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "inspector": "Martin"
+    },
+    "settings": [
+      {
+        "id": "s1",
+        "label": {
+          "zh": "使用的商用清洁剂（R）",
+          "de": "Reinigungsmittel (R)"
+        },
+        "value": ""
+      },
+      {
+        "id": "s2",
+        "label": {
+          "zh": "使用的商用消毒剂（D）",
+          "de": "Desinfektionsmittel (D)"
+        },
+        "value": ""
+      }
+    ],
+    "columns": [
+      {
+        "id": "c0",
+        "label": {
+          "zh": "执行人",
+          "de": "Wer"
+        },
+        "type": "person"
+      },
+      {
+        "id": "c1",
+        "label": {
+          "zh": "方式 R / D",
+          "de": "R / D"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "R 清洁"
+          },
+          {
+            "zh": "D 消毒"
+          },
+          {
+            "zh": "R+D 清洁并消毒"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "销售区 / 柜台",
+          "de": "Verkaufsraum / Theke"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "已完成"
+          },
+          {
+            "zh": "未完成"
+          },
+          {
+            "zh": "不适用"
+          }
+        ],
+        "breachOn": [
+          "未完成"
+        ]
+      },
+      {
+        "id": "c3",
+        "label": {
+          "zh": "备餐区 / 厨房",
+          "de": "Vorbereitung / Küche"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "已完成"
+          },
+          {
+            "zh": "未完成"
+          },
+          {
+            "zh": "不适用"
+          }
+        ],
+        "breachOn": [
+          "未完成"
+        ]
+      },
+      {
+        "id": "c4",
+        "label": {
+          "zh": "仓库",
+          "de": "Lager"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "已完成"
+          },
+          {
+            "zh": "未完成"
+          },
+          {
+            "zh": "不适用"
+          }
+        ],
+        "breachOn": [
+          "未完成"
+        ]
+      },
+      {
+        "id": "c5",
+        "label": {
+          "zh": "设备 / 区域",
+          "de": "Geräte / Bereiche"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "已完成"
+          },
+          {
+            "zh": "未完成"
+          },
+          {
+            "zh": "不适用"
+          }
+        ],
+        "breachOn": [
+          "未完成"
+        ]
+      },
+      {
+        "id": "c6",
+        "label": {
+          "zh": "厕所",
+          "de": "Toiletten"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "已完成"
+          },
+          {
+            "zh": "未完成"
+          },
+          {
+            "zh": "不适用"
+          }
+        ],
+        "breachOn": [
+          "未完成"
+        ]
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "清洁 / 消毒不充分时，必须补做清洁或消毒。R = Reinigung 清洁，D = Desinfektion 消毒。",
+        "de": "Bei unzureichender Reinigung/Desinfektion ist eine nachfolgende Reinigung/Desinfektion erforderlich. R = Reinigung, D = Desinfektion."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  },
+  {
+    "id": "heating-temp",
+    "timing": "day",
+    "icon": {
+      "zh": "热",
+      "de": "KT"
+    },
+    "name": {
+      "zh": "加热温度",
+      "de": "Erhitzungstemperatur",
+      "en": "Heating Temperature"
+    },
+    "layout": "log",
+    "frequency": {
+      "kind": "weekly",
+      "times": 2
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "inspector": "Martin"
+    },
+    "columns": [
+      {
+        "id": "c1",
+        "label": {
+          "zh": "产品",
+          "de": "Produkt"
+        },
+        "type": "text",
+        "placeholder": {
+          "zh": "例如：红烧肉 / Gulasch",
+          "de": "z. B. Gulasch"
+        }
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "实测核心温度",
+          "de": "Gemessene Kerntemperatur"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limit": {
+          "min": 70
+        },
+        "note": {
+          "zh": "适当作用时间后测量，例如 70 °C 保持 10 分钟",
+          "de": "Messung nach angemessener Einwirkzeit, z. B. 70 °C für 10 min"
+        }
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "临界值（烹饪完成时检查）：切开样品观察外观；测量核心温度，例如 70 °C 保持 10 分钟。",
+        "de": "Kritischer Grenzwert (Prüfung bei Garende): Anschnitt einer Probe – Aussehen; Prüfung der Kerntemperatur (Messung nach angemessener Einwirkzeit, z. B. 70 °C für 10 min)."
+      },
+      {
+        "zh": "纠正措施：重新加热（reheating）。",
+        "de": "Korrekturmaßnahme: Nacherhitzen."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  },
+  {
+    "id": "output-temp",
+    "timing": "day",
+    "icon": {
+      "zh": "出",
+      "de": "AT"
+    },
+    "name": {
+      "zh": "出餐温度",
+      "de": "Ausgabetemperatur",
+      "en": "Output Temperature"
+    },
+    "layout": "log",
+    "frequency": {
+      "kind": "weekly",
+      "times": 2
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "inspector": "Martin"
+    },
+    "columns": [
+      {
+        "id": "c1",
+        "label": {
+          "zh": "菜品类型",
+          "de": "Art der Speise"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "热菜"
+          },
+          {
+            "zh": "冷菜 / 沙拉"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "产品 / 菜品",
+          "de": "Produkt / Speise"
+        },
+        "type": "text",
+        "placeholder": {
+          "zh": "例如：牛肉汤 / Kartoffelsalat",
+          "de": "z. B. Kartoffelsalat"
+        }
+      },
+      {
+        "id": "c3",
+        "label": {
+          "zh": "出餐温度",
+          "de": "Ausgabetemperatur"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "limitBy": {
+          "field": "c1",
+          "map": {
+            "热菜": {
+              "min": 65
+            },
+            "冷菜 / 沙拉": {
+              "max": 7
+            }
+          }
+        },
+        "note": {
+          "zh": "热菜 ≥ 65 °C；冷菜与沙拉 max 7 °C",
+          "de": "Warme Speisen ≥ 65 °C; kalte Speisen und Salate max. 7 °C"
+        }
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "临界值：热菜至少 65 °C；冷菜与沙拉最高 7 °C。",
+        "de": "Kritischer Grenzwert: Warme Speisen mindestens 65 °C; kalte Speisen und Salate max. 7 °C."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  },
+  {
+    "id": "incoming-goods",
+    "timing": "day",
+    "icon": {
+      "zh": "验",
+      "de": "WE"
+    },
+    "name": {
+      "zh": "入库验收",
+      "de": "Wareneingangskontrolle",
+      "en": "Incoming Goods Inspection"
+    },
+    "layout": "log",
+    "frequency": {
+      "kind": "weekly",
+      "times": 2
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "inspector": "Martin"
+    },
+    "columns": [
+      {
+        "id": "c1",
+        "label": {
+          "zh": "供应商",
+          "de": "Lieferant"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "其他"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "商品类别",
+          "de": "Warengruppe"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "冷冻品"
+          },
+          {
+            "zh": "肉与肉制品"
+          },
+          {
+            "zh": "鱼"
+          },
+          {
+            "zh": "禽类 / 野味 / 绞肉"
+          },
+          {
+            "zh": "EU 绞肉（未开封）"
+          },
+          {
+            "zh": "其他（不测温）"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "label": {
+          "zh": "实测温度",
+          "de": "Gemessene Temperatur"
+        },
+        "type": "temp",
+        "unit": "°C",
+        "optional": true,
+        "limitBy": {
+          "field": "c2",
+          "map": {
+            "冷冻品": {
+              "max": -18,
+              "tolerance": -15
+            },
+            "肉与肉制品": {
+              "max": 4
+            },
+            "鱼": {
+              "max": 2
+            },
+            "禽类 / 野味 / 绞肉": {
+              "max": 4
+            },
+            "EU 绞肉（未开封）": {
+              "max": 2
+            }
+          }
+        }
+      },
+      {
+        "id": "c4",
+        "label": {
+          "zh": "感官检查",
+          "de": "Sensorik"
+        },
+        "type": "checklist",
+        "items": [
+          {
+            "zh": "无污染"
+          },
+          {
+            "zh": "包装完好"
+          },
+          {
+            "zh": "气味正常"
+          },
+          {
+            "zh": "保质期有效"
+          },
+          {
+            "zh": "运输车况正常"
+          },
+          {
+            "zh": "司机情况正常"
+          }
+        ],
+        "requireAll": true
+      },
+      {
+        "id": "c5",
+        "label": {
+          "zh": "发现的问题",
+          "de": "Festgestellte Mängel"
+        },
+        "type": "text",
+        "optional": true,
+        "multiline": true,
+        "placeholder": {
+          "zh": "无问题可留空",
+          "de": "Leer lassen, wenn keine Mängel"
+        }
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "临界值 — 温度：冷冻品 −18 °C（短暂 −15 °C）；肉与肉制品 +4 °C；鱼 +2 °C；禽类 / 野味 / 绞肉 +4 °C；EU 来源绞肉未开封 +2 °C。",
+        "de": "Kritische Grenzwerte – Temperaturen: Tiefkühlware −18 °C (kurzzeitig −15 °C); Fleisch/Fleischerzeugnisse +4 °C; Fisch +2 °C; Geflügel/Wild/Hackfleisch +4 °C; Hackfleisch aus EU-Betrieben, ungeöffnet +2 °C."
+      },
+      {
+        "zh": "临界值 — 感官：无污染、包装完好、气味正常、保质期有效、运输车辆状况与司机情况正常。",
+        "de": "Kritische Grenzwerte – Sensorik: keine Verunreinigung, Verpackung einwandfrei, Geruch einwandfrei, gültiges Mindesthaltbarkeitsdatum, Zustand des Lieferfahrzeugs und des Fahrers."
+      },
+      {
+        "zh": "纠正措施：退货（Return of goods）。",
+        "de": "Korrekturmaßnahme: Rückgabe der Ware."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  },
+  {
+    "id": "pest-control",
+    "timing": "any",
+    "icon": {
+      "zh": "虫",
+      "de": "SB"
+    },
+    "name": {
+      "zh": "害虫防治",
+      "de": "Schädlingsbekämpfung",
+      "en": "Pest Control"
+    },
+    "layout": "log",
+    "frequency": {
+      "kind": "weekly",
+      "times": 1
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "inspector": "Martin"
+    },
+    "settings": [
+      {
+        "id": "s1",
+        "label": {
+          "zh": "专业防治公司 · 名称",
+          "de": "Fachfirma · Name"
+        },
+        "value": ""
+      },
+      {
+        "id": "s2",
+        "label": {
+          "zh": "专业防治公司 · 地址 / 电话",
+          "de": "Fachfirma · Adresse / Tel."
+        },
+        "value": ""
+      }
+    ],
+    "columns": [
+      {
+        "id": "c1",
+        "label": {
+          "zh": "备餐区 / 厨房",
+          "de": "Vorbereitung / Küche"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "无发现"
+          },
+          {
+            "zh": "有痕迹"
+          },
+          {
+            "zh": "发现活体"
+          }
+        ],
+        "breachOn": [
+          "有痕迹",
+          "发现活体"
+        ]
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "冷藏储存",
+          "de": "Kühllagerung"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "无发现"
+          },
+          {
+            "zh": "有痕迹"
+          },
+          {
+            "zh": "发现活体"
+          }
+        ],
+        "breachOn": [
+          "有痕迹",
+          "发现活体"
+        ]
+      },
+      {
+        "id": "c3",
+        "label": {
+          "zh": "仓库",
+          "de": "Lager"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "无发现"
+          },
+          {
+            "zh": "有痕迹"
+          },
+          {
+            "zh": "发现活体"
+          }
+        ],
+        "breachOn": [
+          "有痕迹",
+          "发现活体"
+        ]
+      },
+      {
+        "id": "c4",
+        "label": {
+          "zh": "销售区",
+          "de": "Verkaufsraum"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "无发现"
+          },
+          {
+            "zh": "有痕迹"
+          },
+          {
+            "zh": "发现活体"
+          }
+        ],
+        "breachOn": [
+          "有痕迹",
+          "发现活体"
+        ]
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "每周检查是否有老鼠、大鼠、蟑螂、蚂蚁、苍蝇侵扰。发现粪便 / 其他痕迹或活体害虫：通知负责人，并委托专业公司处理（需登记地址与电话）。",
+        "de": "Wöchentliche Kontrolle auf Befall durch Mäuse, Ratten, Schaben, Ameisen, Fliegen. Bei Kot/anderen Spuren oder lebenden Schädlingen: verantwortliche Person informieren und eine Fachfirma beauftragen (Adresse/Tel. hinterlegen)."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  },
+  {
+    "id": "staff-training",
+    "timing": "any",
+    "icon": {
+      "zh": "培",
+      "de": "MS"
+    },
+    "name": {
+      "zh": "员工培训",
+      "de": "Mitarbeiterschulung",
+      "en": "Staff Training"
+    },
+    "layout": "training",
+    "frequency": {
+      "kind": "yearly",
+      "times": 1
+    },
+    "header": {
+      "operation": "Martin Biergarten GmbH",
+      "referent": "",
+      "topic": ""
+    },
+    "columns": [
+      {
+        "id": "c1",
+        "label": {
+          "zh": "参与人",
+          "de": "Teilnehmer"
+        },
+        "type": "person"
+      },
+      {
+        "id": "c2",
+        "label": {
+          "zh": "培训类型",
+          "de": "Schulungsart"
+        },
+        "type": "choice",
+        "options": [
+          {
+            "zh": "初次培训"
+          },
+          {
+            "zh": "复训"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "label": {
+          "zh": "签名",
+          "de": "Unterschrift"
+        },
+        "type": "signature"
+      }
+    ],
+    "footnotes": [
+      {
+        "zh": "至少每年一次。表头需填写讲师（Referent）与培训主题（Training topic）。",
+        "de": "Mindestens einmal jährlich. Im Kopf sind Referent und Schulungsthema anzugeben."
+      }
+    ],
+    "version": 1,
+    "status": "启用",
+    "createdAt": "2026-09-10"
+  }
+]

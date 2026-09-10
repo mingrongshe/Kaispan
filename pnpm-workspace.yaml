@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+
+# pnpm 10 默认不跑依赖的 postinstall。下面这几个必须跑：
+# prisma 要下载引擎，swc/esbuild 要装二进制，embedded-postgres 要解出 postgres 二进制。
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - prisma
+  - "@swc/core"
+  - esbuild
+  - "@embedded-postgres/linux-x64"
+  - "@embedded-postgres/linux-arm64"
+  - "@embedded-postgres/darwin-x64"
+  - "@embedded-postgres/darwin-arm64"

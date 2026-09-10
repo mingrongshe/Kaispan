@@ -1,0 +1,54 @@
+:root {
+  color-scheme: light dark;
+  --ink: #16161a;
+  --muted: #6b6b76;
+  --line: #e4e4ea;
+  --bg: #f7f7f9;
+  --card: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ececf1;
+    --muted: #9a9aa5;
+    --line: #2b2b33;
+    --bg: #131318;
+    --card: #1c1c22;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px 16px 48px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", "Noto Sans SC", sans-serif;
+}
+
+main { max-width: 720px; margin: 0 auto; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 20px; margin: 0 0 16px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+dt { color: var(--muted); }
+dd { margin: 0; }
+label { display: block; margin-bottom: 8px; color: var(--muted); }
+input, button {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: inherit;
+}
+button { cursor: pointer; }
+.error { color: #c62828; }

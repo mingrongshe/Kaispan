@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+  },
+  // vitest.config.mts 是 ESM 配置文件，由 vite 自己加载，不进 CommonJS 的类型检查范围
+  "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts", "prisma.config.ts"]
+}
