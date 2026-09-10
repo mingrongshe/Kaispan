@@ -5,11 +5,12 @@ import { EntriesService } from "./entries.service";
 import { HaccpController } from "./haccp.controller";
 import { ManageController } from "./manage.controller";
 import { ManageService } from "./manage.service";
+import { ReportService } from "./report.service";
 import { TasksService } from "./tasks.service";
 import { TemplatesService } from "./templates.service";
 
 @Module({
   controllers: [HaccpController, ManageController, EquipmentController],
-  providers: [TemplatesService, TasksService, EntriesService, ManageService, EquipmentService],
+  providers: [TemplatesService, TasksService, EntriesService, ManageService, ReportService, EquipmentService],
 })
 export class HaccpModule {}

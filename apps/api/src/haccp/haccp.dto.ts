@@ -131,6 +131,13 @@ export class CreateEquipmentDto {
   @ApiPropertyOptional() @IsOptional() @IsString() linkColumnId?: string;
 }
 
+export class MonthQuery {
+  @ApiPropertyOptional({ example: "2026-09", description: "不传就是当月" })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}$/, { message: "月份格式应该是 YYYY-MM" })
+  month?: string;
+}
+
 export class CompleteWorkOrderDto {
   @ApiProperty({ description: "修了什么，不写不算完成" }) @IsString() result!: string;
 }

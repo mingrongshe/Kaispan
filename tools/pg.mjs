@@ -10,13 +10,14 @@
 import EmbeddedPostgres from "embedded-postgres";
 import net from "node:net";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, ".pgdata");
 const PID_FILE = join(DATA_DIR, "serve.pid");
+const LOG_FILE = join(DATA_DIR, "serve.log");
 const PORT = 55432;
 const DATABASES = ["haccp", "haccp_test"];
 
@@ -87,13 +88,20 @@ async function ensure() {
     return;
   }
   mkdirSync(DATA_DIR, { recursive: true });
+  // 上一次进程被强杀时留下的 pid 文件会让人以为还在跑，起之前先清掉
+  rmSync(PID_FILE, { force: true });
+  // 日志写进文件而不是丢掉：起不来的时候要看得见原因
+  const log = openSync(LOG_FILE, "a");
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "serve"], {
     detached: true,
-    stdio: "ignore",
+    stdio: ["ignore", log, log],
     cwd: ROOT,
   });
   child.unref();
-  if (!(await waitUntilReachable())) throw new Error("postgres 起不来，用 `node tools/pg.mjs serve` 看日志");
+  if (!(await waitUntilReachable())) {
+    const tail = existsSync(LOG_FILE) ? readFileSync(LOG_FILE, "utf8").split("\n").slice(-15).join("\n") : "";
+    throw new Error(`postgres 起不来。${LOG_FILE} 最后几行：\n${tail}`);
+  }
   console.log(`postgres 已在 127.0.0.1:${PORT}，库：${DATABASES.join(", ")}`);
 }
 

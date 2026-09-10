@@ -4,15 +4,27 @@ import { HaccpAccessGuard, RequireHaccpFill, RequireHaccpManage } from "../acces
 import { Ctx } from "../context/ctx.decorator";
 import type { CurrentContext } from "../context/current-context";
 import { SessionGuard } from "../context/session.guard";
-import { AssignTemplateDto, ResolveDto, SetShiftDefinitionDto, SetShiftDto, WeekQuery } from "./haccp.dto";
+import { todayInStore } from "../domain/dates";
+import { AssignTemplateDto, MonthQuery, ResolveDto, SetShiftDefinitionDto, SetShiftDto, WeekQuery } from "./haccp.dto";
 import { ManageService } from "./manage.service";
+import { ReportService } from "./report.service";
 
 /** 店长那一层：处理异常、排班、派单。员工调这里一律 403。 */
 @ApiTags("haccp-manage")
 @Controller("haccp/manage")
 @UseGuards(SessionGuard, HaccpAccessGuard)
 export class ManageController {
-  constructor(private readonly manage: ManageService) {}
+  constructor(
+    private readonly manage: ManageService,
+    private readonly reports: ReportService,
+  ) {}
+
+  /** 检查模式：一次给出这个月全部表，只读，屏幕转过去就能给检查员看 */
+  @Get("inspection")
+  @RequireHaccpManage()
+  inspection(@Ctx() ctx: CurrentContext, @Query() query: MonthQuery) {
+    return this.reports.inspection(ctx, query.month ?? todayInStore().slice(0, 7));
+  }
 
   /** 按设备 / 测量点聚合的待处理，店长主页用这个 */
   @Get("issue-groups")

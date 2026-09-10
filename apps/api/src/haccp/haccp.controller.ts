@@ -7,7 +7,8 @@ import { SessionGuard } from "../context/session.guard";
 import { todayInStore } from "../domain/dates";
 import { evaluate } from "../domain/evaluate";
 import { EntriesService } from "./entries.service";
-import { DateQuery, ListEntriesQuery, SaveDraftDto, SubmitDto, VoidDto } from "./haccp.dto";
+import { DateQuery, ListEntriesQuery, MonthQuery, SaveDraftDto, SubmitDto, VoidDto } from "./haccp.dto";
+import { ReportService } from "./report.service";
 import { TasksService } from "./tasks.service";
 import { TemplatesService } from "./templates.service";
 
@@ -23,7 +24,15 @@ export class HaccpController {
     private readonly templates: TemplatesService,
     private readonly tasks: TasksService,
     private readonly entries: EntriesService,
+    private readonly reports: ReportService,
   ) {}
+
+  /** 月度表：跟纸质原表同一个版式，可打印可给检查员看 */
+  @Get("templates/:id/monthly")
+  @RequireHaccpFill()
+  monthly(@Ctx() ctx: CurrentContext, @Param("id") id: string, @Query() query: MonthQuery) {
+    return this.reports.monthly(ctx, id, query.month ?? todayInStore().slice(0, 7));
+  }
 
   /** 员工端「等你处理」：只有真派给他、且这个周期还没做够的 */
   @Get("my-tasks")
