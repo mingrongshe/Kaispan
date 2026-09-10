@@ -24,14 +24,15 @@ HACCP 表单模块的独立开发仓库。第一阶段在这里做出可以真�
 ```bash
 cp .env.example .env
 pnpm install
-pnpm setup     # 起 PostgreSQL + 打 migration + 灌演示数据
+pnpm bootstrap # 起 PostgreSQL + 生成 Prisma 客户端 + 打 migration + 灌演示数据
 pnpm dev       # API 在 127.0.0.1:3001，前端在 127.0.0.1:3000
 ```
 
-`pnpm setup` 等价于依次执行：
+`pnpm bootstrap` 等价于依次执行（`setup` 这个名字被 pnpm 自己占了，所以叫 bootstrap）：
 
 ```bash
 pnpm pg:start
+pnpm db:generate
 pnpm --filter @kaispan-haccp/api db:migrate
 pnpm --filter @kaispan-haccp/api db:seed
 ```

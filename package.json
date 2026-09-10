@@ -6,16 +6,17 @@
     "node": ">=22"
   },
   "scripts": {
+    "bootstrap": "node tools/pg.mjs ensure && pnpm db:generate && pnpm --filter @kaispan-haccp/api db:migrate && pnpm --filter @kaispan-haccp/api db:seed",
+    "dev": "pnpm --parallel --filter @kaispan-haccp/api --filter @kaispan-haccp/web dev",
     "typecheck": "pnpm -r --sequential typecheck",
     "test": "pnpm --filter @kaispan-haccp/api test",
     "test:integration": "pnpm --filter @kaispan-haccp/api test:integration",
     "build": "pnpm -r --sequential build",
-    "dev": "pnpm --parallel --filter @kaispan-haccp/api --filter @kaispan-haccp/web dev",
+    "db:generate": "pnpm --filter @kaispan-haccp/api exec prisma generate",
     "db:migrate": "pnpm --filter @kaispan-haccp/api db:migrate",
     "db:seed": "pnpm --filter @kaispan-haccp/api db:seed",
     "pg:start": "node tools/pg.mjs ensure",
-    "pg:stop": "node tools/pg.mjs stop",
-    "setup": "node tools/pg.mjs ensure && pnpm --filter @kaispan-haccp/api db:migrate && pnpm --filter @kaispan-haccp/api db:seed"
+    "pg:stop": "node tools/pg.mjs stop"
   },
   "devDependencies": {
     "embedded-postgres": "17.10.0-beta.17",

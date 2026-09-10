@@ -35,6 +35,9 @@
 | `pnpm test:integration` | 13 条集成测试通过，跑在真实 PostgreSQL 17 上 |
 | `pnpm build` | API 与前端都编译通过 |
 
+四条在两台机器上各跑了一遍：一台 x86_64 Linux，一台 aarch64 Linux。`pnpm install` 到
+`pnpm build` 全程没有需要手工干预的步骤。
+
 集成测试覆盖到的：没登录被拒；员工调店长接口 403；店长看得到本店待处理；另一个
 organization 的店长看不到；同公司另一家门店的店长看不到；带 `templateId` 查询也逃不出本店范围；
 员工只读看得到同事填的记录；别人的草稿不出现；记录确实在 PostgreSQL 里；手写的 migration SQL
@@ -65,8 +68,11 @@ organization 的店长看不到；同公司另一家门店的店长看不到；�
 
 - `binaries.prisma.sh` 在这套开发环境里连不上，所以 migration 走 `tools/migrate.mjs`
   而不是 `prisma migrate`。理由和影响写在 README「关于 migration」。
-- 代码只在 Linux 上跑过。`embedded-postgres` 的 macOS 二进制已经列进
-  `pnpm-workspace.yaml` 的 `onlyBuiltDependencies`，但没有在 macOS 上实际验证。
+- 代码只在 Linux 上跑过（x86_64 与 aarch64 各一台）。`embedded-postgres` 的 macOS 二进制
+  已经列进 `pnpm-workspace.yaml` 的 `onlyBuiltDependencies`，但没有在 macOS 上实际验证。
+- 不要把工作副本放在网络挂载或 FUSE 挂载的目录里跑。pnpm 的软链 node_modules 加上 Prisma CLI
+  会同时打开大量文件，挂载层的句柄上限撑不住，`prisma generate` 会报 EMFILE。放在本地磁盘上
+  就没有这个问题。
 
 ## 这一版不能代表
 
