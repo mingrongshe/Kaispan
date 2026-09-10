@@ -12,3 +12,6 @@ coverage/
 .pgdata/
 .storage/
 generated/
+
+# Next 自己生成
+next-env.d.ts
