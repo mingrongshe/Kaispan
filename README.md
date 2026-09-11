@@ -17,30 +17,53 @@ HACCP 表单模块的独立开发仓库。第一阶段在这里做出可以真�
 
 - Node 22
 - pnpm 10.12.1（`corepack enable && corepack prepare pnpm@10.12.1 --activate`）
-- PostgreSQL。不用自己装：`pnpm pg:start` 会在 `.pgdata/` 起一个真实的 PostgreSQL 17
-  （二进制来自 `@embedded-postgres/<平台>` 这个 npm 包，官方构建，不是 mock；
-  `tools/pg.mjs` 直接驱动 `initdb` 和 `pg_ctl`）。想接 Neon、Supabase 或自建库，改 `.env`
-  里的 `DATABASE_URL` 就行，那时不需要 `pnpm pg:start`。
+- PostgreSQL 17。有 Docker 就用 Docker（`pnpm db:up`）；没有的话 `pnpm pg:start`
+  会用 `@embedded-postgres/<平台>` 这个 npm 包里自带的官方 postgres 二进制起一个，
+  照样是真数据库，不是 mock。两条路都监听 `127.0.0.1:55432`，`.env` 不用改。
+- 想接 Supabase、Neon 或自建库，改 `.env` 里的 `DATABASE_URL` 就行。
+  `tools/pg.mjs` 认出地址不是本机就会让路，不会再多起一个本地数据库。
 
 ## 跑起来
 
 ```bash
 cp .env.example .env
 pnpm install
-pnpm bootstrap # 起 PostgreSQL + 生成 Prisma 客户端 + 打 migration + 灌演示数据
+pnpm db:up     # Docker 起 PostgreSQL 17（没装 Docker 就跳过这步）
+pnpm bootstrap # 确保数据库在跑 + 生成 Prisma 客户端 + 打 migration + 灌演示数据
 pnpm dev       # API 在 127.0.0.1:3001，前端在 127.0.0.1:3000
 ```
 
 `pnpm bootstrap` 等价于依次执行（`setup` 这个名字被 pnpm 自己占了，所以叫 bootstrap）：
 
 ```bash
-pnpm pg:start
+pnpm pg:start  # 数据库已经在 55432 上跑着就只补建库，不会重复起
 pnpm db:generate
 pnpm --filter @kaispan-haccp/api db:migrate
 pnpm --filter @kaispan-haccp/api db:seed
 ```
 
-停掉本地数据库：`pnpm pg:stop`。
+### 数据库那几个命令
+
+```bash
+pnpm db:up    # docker compose up -d db
+pnpm db:down  # 停掉容器，数据还在
+pnpm db:nuke  # 停掉并删数据卷，下次 bootstrap 从空库重来
+pnpm pg:stop  # 停掉 pnpm pg:start 起的那个（跟 Docker 无关）
+```
+
+app 和 web 默认跑在宿主机上，不进容器 —— macOS 上容器里跑 Next 的文件监听要过 bind mount，
+慢得没必要。想看整套在容器里是什么样（部署前的预演）：
+
+```bash
+docker compose --profile full up --build
+```
+
+这条用的就是要推到 Railway 的那两个镜像。
+
+## 部署
+
+Supabase 放数据库、Vercel 放前端、Railway 放后端，每一步和每个环境变量写在
+[docs/deploy.md](docs/deploy.md)。
 
 ## 演示账号
 
@@ -78,9 +101,15 @@ pnpm build
 ```
 apps/api          NestJS 11 + Prisma 7，业务逻辑、权限、租户范围都在这里
 apps/web          Next.js 16 + React 19，只通过 API 拿数据，不连数据库
-tools             本地 PostgreSQL、migration 执行器、原型模板抽取脚本
-docs              产品范围、兼容边界、验收标准、参考地图、当前状态
+tools             本地 PostgreSQL、migration 执行器、开发态冒烟、原型模板抽取脚本
+docs              产品范围、兼容边界、验收标准、参考地图、部署、当前状态
+docker            docker-compose 里数据库容器的初始化 SQL
 references        已确认的 HTML 原型（单文件）与它的打包脚本
+
+docker-compose.yml        本地数据库；--profile full 连 api/web 一起进容器
+apps/api/Dockerfile       后端生产镜像，Railway 用的就是它
+apps/web/Dockerfile       前端生产镜像，上 Vercel 的话用不到
+railway.json              Railway 的构建和 pre-deploy 配置
 ```
 
 ## 关于 migration

@@ -20,6 +20,7 @@ import net from "node:net";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
+import { loadEnv } from "./env.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, ".pgdata");
@@ -177,10 +178,36 @@ async function ensureDatabases() {
   await client.end();
 }
 
+/**
+ * 这个脚本只负责「本机 127.0.0.1:55432 上那台自带的 postgres」。
+ * 数据库换成了 Docker、Supabase、Neon 或者别的机器时，它要认出来并让路，
+ * 否则 pnpm db:migrate 会在连 Supabase 之前先莫名其妙地起一个本地数据库。
+ */
+function external() {
+  loadEnv();
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  const local = ["127.0.0.1", "localhost", "::1"].includes(parsed.hostname);
+  if (local && Number(parsed.port || 5432) === PORT) return null;
+  return `${parsed.hostname}:${parsed.port || 5432}`;
+}
+
 async function start() {
+  const elsewhere = external();
+  if (elsewhere) {
+    console.log(`DATABASE_URL 指向 ${elsewhere}，不是本机自带的那台，跳过。数据库归谁管就由谁起。`);
+    return;
+  }
+
   if (await reachable()) {
     await ensureDatabases();
-    console.log(`postgres 已经在跑（127.0.0.1:${PORT}）`);
+    console.log(`postgres 已经在跑（127.0.0.1:${PORT}），库：${DATABASES.join(", ")}。Docker 起的也算。`);
     return;
   }
 

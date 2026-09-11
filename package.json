@@ -16,6 +16,9 @@
     "db:generate": "pnpm --filter @kaispan-haccp/api exec prisma generate",
     "db:migrate": "pnpm --filter @kaispan-haccp/api db:migrate",
     "db:seed": "pnpm --filter @kaispan-haccp/api db:seed",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:nuke": "docker compose down -v",
     "pg:start": "node tools/pg.mjs start",
     "pg:stop": "node tools/pg.mjs stop"
   },

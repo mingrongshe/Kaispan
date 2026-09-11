@@ -14,7 +14,9 @@ async function bootstrap(): Promise<void> {
   const config = new DocumentBuilder().setTitle("KaiSpan HACCP API").setVersion("0.1.0").build();
   SwaggerModule.setup("docs", app, SwaggerModule.createDocument(app, config));
 
-  await app.listen(Number(process.env.PORT ?? 3001), "127.0.0.1");
+  // 本地默认只听回环，别把开发中的接口暴露到局域网。
+  // 容器里必须听 0.0.0.0，否则端口映射进不来 —— 镜像里设了 HOST=0.0.0.0。
+  await app.listen(Number(process.env.PORT ?? 3001), process.env.HOST ?? "127.0.0.1");
 }
 
 void bootstrap();

@@ -19,7 +19,14 @@ const MIGRATIONS_DIR = join(ROOT, "apps", "api", "prisma", "migrations");
 
 loadEnv();
 const useTest = process.argv.includes("--test");
-const url = useTest ? process.env.TEST_DATABASE_URL : process.env.DATABASE_URL;
+
+// 打 migration 要走直连，不能走连接池。
+// Supabase 的 transaction pooler（6543 端口）一条语句一个事务、不保证会话粘性，
+// DDL 和 advisory lock 在上面都不可靠。Supabase 控制台里的 "Direct connection"
+// 就是给这种活准备的，填进 DIRECT_DATABASE_URL。本地开发没有池，可以不填。
+const url = useTest
+  ? process.env.TEST_DATABASE_URL
+  : (process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL);
 if (!url) {
   console.error(`缺 ${useTest ? "TEST_DATABASE_URL" : "DATABASE_URL"}，看 .env.example`);
   process.exit(1);

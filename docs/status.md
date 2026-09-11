@@ -193,6 +193,38 @@ organization / unit 的记录」，原来的测试只证明了读不到。补了
    后端 500 和登录码真的错了长得一模一样，等于把原因藏了。现在把后端的 `code`/`message`
    带回页面，连不上后端时显示的是「连不上后端 …」。
 
+## 本地 Docker 与部署链路（2026-09-11）
+
+本地数据库多了一条 Docker 的路，`docker-compose.yml` 里 `db` 服务起 postgres:17-alpine，
+端口还是 `55432`，所以 `.env` 一个字都不用改。`tools/pg.mjs` 现在先看 `DATABASE_URL`：
+指向的不是本机那台就直接让路（否则 `pnpm db:migrate` 会在连 Supabase 之前先起一个本地库），
+指向本机而端口已经通了就只补建库 —— Docker 起的也认。`--profile full` 能把 api 和 web
+一起拉进容器，用的就是要推到 Railway 的那两个镜像，等于本地先演一遍部署后的样子。
+
+部署方向定了：Supabase（数据库）+ Vercel（前端）+ Railway（后端），每一步写在
+[deploy.md](deploy.md)。为这条链路改的几处：
+
+- `main.ts` 原来写死监听 `127.0.0.1`。容器里这样端口映射进不来，改成读 `HOST`，
+  本地默认仍然只听回环，镜像里设 `HOST=0.0.0.0`。**这条不改，部上去就是连不上。**
+- `next.config.ts` 里那个 `env: { API_BASE_URL }` 块去掉了。它是 build 时把值写死进产物的，
+  换一次后端地址就得重新构建前端；而且这个值只在服务端用得到，写进产物是白白多暴露一次。
+- `tools/env.mjs` 在 `NODE_ENV=production` 且没有 `.env` 时不再退回 `.env.example`。
+  原来会退回去，等于把线上连接串悄悄换成 `127.0.0.1`，报错还很难看懂。
+- `tools/migrate.mjs` 和 `prisma/seed.ts` 认 `DIRECT_DATABASE_URL`。Supabase 的 transaction
+  pooler 一条语句一个事务、不保证会话粘性，DDL 和 advisory lock 在上面不可靠，
+  migration 必须走直连；应用那边反过来要走池子。
+
+顺带记一条部署形状上的事实：浏览器从头到尾只跟前端说话，业务数据是前端的服务端转发给
+NestJS 的（`apps/web/lib/api.ts`、两个 route handler），所以后端不需要对公网开放，
+也不存在跨站 cookie。这不是部署时凑的，是兼容边界里前后端分工顺带带来的。
+
+**没有实机验证过。** 这台开发环境里没有 docker daemon，所以 compose 只做到
+`docker compose config` 校验通过，两个 Dockerfile 没有真正构建过；Supabase、Vercel、Railway
+三个平台一个都还没连。已经在本机验过的是：Next 的 standalone 产物落在
+`.next/standalone/apps/web/server.js`（和 Dockerfile 里的 CMD 对得上）、
+`node apps/api/dist/main.js` 用注入的环境变量能起并且登录返回 201、
+`NODE_ENV=production` 且无 `.env` 时 migration 会明确报缺变量而不是连本地。
+
 ## 已知的环境限制
 
 - `binaries.prisma.sh` 在这套开发环境里连不上，所以 migration 走 `tools/migrate.mjs`

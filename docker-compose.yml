@@ -1,0 +1,74 @@
+# 本地开发的数据库。默认只起 postgres，api 和 web 还是跑在宿主机上
+# （macOS 上容器里跑 Next 的文件监听要走 bind mount，慢得没必要）。
+#
+#   docker compose up -d db        起数据库
+#   pnpm bootstrap                 打 migration + 灌演示数据（会认出数据库已经在跑）
+#   pnpm dev                       api 3001，web 3000
+#
+# 想整套都进容器（验部署前的样子）：
+#
+#   docker compose --profile full up --build
+#
+# 端口特意用 55432 而不是 5432：机器上本来就装着 postgres 的时候不打架，
+# 也和 .env 里现成的 DATABASE_URL 对得上，不用改任何配置。
+name: kaispan-haccp
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kaispan
+      POSTGRES_PASSWORD: kaispan
+      POSTGRES_DB: haccp
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kaispan -d haccp"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # 下面两个只在 --profile full 时才起。它们用的就是要推到 Railway 的那两个镜像，
+  # 所以这条 profile 顺便是一次本地的部署预演。
+  api:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://kaispan:kaispan@db:5432/haccp?schema=public
+      PORT: "3001"
+      WEB_ORIGIN: http://127.0.0.1:3000
+      FILE_STORAGE_DIR: /data/storage
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - api-storage:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      # 容器之间走服务名，不走 127.0.0.1。浏览器从头到尾只跟 web 说话，
+      # 业务数据由 web 的服务端转发给 api，所以 api 不用对外开。
+      API_BASE_URL: http://api:3001
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  api-storage:

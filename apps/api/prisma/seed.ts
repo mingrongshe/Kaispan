@@ -12,7 +12,8 @@ process.loadEnvFile(existsSync(join(repoRoot, ".env")) ? join(repoRoot, ".env") 
  * 七张表的列定义和临界值来自 prototype-templates.json，由 tools/extract-templates.mjs
  * 从 references/haccp-prototype.html 的原型代码里抠出来，不是手抄的。
  */
-const connectionString = process.env.DATABASE_URL;
+// 灌数据和打 migration 一样，走直连比走连接池稳（见 tools/migrate.mjs 里的说明）。
+const connectionString = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!connectionString) throw new Error("缺 DATABASE_URL，看 .env.example");
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
