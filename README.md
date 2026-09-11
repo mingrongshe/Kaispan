@@ -62,11 +62,16 @@ pnpm --filter @kaispan-haccp/api db:seed
 pnpm typecheck
 pnpm test              # 单元测试
 pnpm test:integration  # 真实 PostgreSQL 上的集成测试
+pnpm smoke             # 开发态冒烟：按 pnpm dev 的方式起 API，真登录一次
 pnpm build
 ```
 
 `pnpm test:integration` 会自己确保数据库起着、migration 打到 `TEST_DATABASE_URL` 那个库上。
 测试库会被反复清空，所以刻意和开发库分开。
+
+`pnpm smoke` 守的是另一条缝：测试跑在 swc 编译出来的代码上，开发态是另一条编译链，
+一旦装饰器元数据丢了，Nest 的构造函数注入就是 undefined，接口全 500，而测试照样全绿。
+它要求演示数据在（先跑过 `pnpm bootstrap`），并且 `pnpm dev` 没占着 3001。
 
 ## 目录
 

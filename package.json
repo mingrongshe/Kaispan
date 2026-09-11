@@ -10,6 +10,7 @@
     "dev": "pnpm --parallel --filter @kaispan-haccp/api --filter @kaispan-haccp/web dev",
     "typecheck": "pnpm -r --sequential typecheck",
     "test": "pnpm --filter @kaispan-haccp/api test",
+    "smoke": "node tools/smoke.mjs",
     "test:integration": "pnpm --filter @kaispan-haccp/api test:integration",
     "build": "pnpm -r --sequential build",
     "db:generate": "pnpm --filter @kaispan-haccp/api exec prisma generate",

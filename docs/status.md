@@ -167,6 +167,32 @@ organization / unit 的记录」，原来的测试只证明了读不到。补了
 查主仓库需要项目负责人提供只读路径，本轮没有拿到，所以整个过程一次也没有访问过主仓库。
 真接入前这个标识值得核一眼。
 
+## 开发态起不来的那个 bug（2026-09-11，已修）
+
+在 macOS 上按 README 跑起来之后，`POST /auth/login` 一律 500。查到的原因不在数据库，也不在
+业务代码，在开发态的编译链上：
+
+- `apps/api` 的 dev 脚本原本是 `tsx watch src/main.ts`。tsx 底下是 esbuild，esbuild 不支持
+  `emitDecoratorMetadata`，所以 `design:paramtypes` 这份元数据压根没生成。
+- Nest 的构造函数注入靠的就是这份元数据。拿不到就当这个类没有依赖，于是 `AuthController`
+  被无参构造出来，`this.auth` 是 `undefined`，一调就 `TypeError`，全局兜底成 500。
+- Nest 启动时不会报错——它不知道这些依赖本该存在，所以日志里照样是
+  `Nest application successfully started`。
+
+三条检查一条都没拦住它：单元测试和集成测试走 `unplugin-swc`，`pnpm build` 走 `tsc`，
+两条链都正确生成元数据，96 个测试全绿；只有开发态那条链是坏的。
+
+改了三处：
+
+1. dev 脚本换成 `node --watch -r @swc-node/register src/main.ts`，和测试用的是同一个编译器
+   （swc），元数据按 `tsconfig.json` 里的 `emitDecoratorMetadata` 生成。新增 devDependency
+   `@swc-node/register`。
+2. 新增 `pnpm smoke`（`tools/smoke.mjs`）：按开发态那条链把 API 起起来，真发一次登录，
+   要求正确登录码拿到 token、错误登录码是 400 `INVALID_LOGIN_CODE`。这条缝以后有人守。
+3. 前端 `login()` 以前对任何非 2xx 都返回 `null`，登录页于是统一显示「登录码不对」——
+   后端 500 和登录码真的错了长得一模一样，等于把原因藏了。现在把后端的 `code`/`message`
+   带回页面，连不上后端时显示的是「连不上后端 …」。
+
 ## 已知的环境限制
 
 - `binaries.prisma.sh` 在这套开发环境里连不上，所以 migration 走 `tools/migrate.mjs`

@@ -59,16 +59,38 @@ export async function apiSend<T>(
   return { ok: true, data: payload as T };
 }
 
-export async function login(loginCode: string): Promise<string | null> {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ loginCode }),
-    cache: "no-store",
-  });
-  if (!response.ok) return null;
-  const body = (await response.json()) as { token: string };
-  return body.token;
+/**
+ * 登录失败要把后端的真实原因带回去。以前一律返回 null，页面只会说「登录码不对」，
+ * 后端 500 或者根本没起来的时候等于把真原因藏了，排查只能靠翻终端。
+ */
+export async function login(
+  loginCode: string,
+): Promise<{ ok: true; token: string } | { ok: false; error: ApiError }> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loginCode }),
+      cache: "no-store",
+    });
+  } catch {
+    return {
+      ok: false,
+      error: { code: "API_UNREACHABLE", message: `连不上后端 ${API_BASE_URL}，看看 pnpm dev 那个窗口里 api 还活着没` },
+    };
+  }
+  const payload = (await response.json().catch(() => ({}))) as Partial<ApiError> & { token?: string };
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: {
+        code: payload.code ?? `HTTP_${response.status}`,
+        message: payload.message ?? `后端返回 ${response.status}，去 pnpm dev 那个窗口看 api 的报错`,
+      },
+    };
+  }
+  return { ok: true, token: payload.token as string };
 }
 
 /** 上传照片：把浏览器传上来的 File 原样转发给后端 */

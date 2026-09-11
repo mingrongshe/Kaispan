@@ -12,9 +12,9 @@ export default async function LoginPage({
   async function submit(formData: FormData): Promise<void> {
     "use server";
     const loginCode = String(formData.get("loginCode") ?? "").trim();
-    const token = await login(loginCode);
-    if (!token) redirect("/login?error=1");
-    (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, sameSite: "lax", path: "/" });
+    const result = await login(loginCode);
+    if (!result.ok) redirect(`/login?error=${encodeURIComponent(result.error.message)}`);
+    (await cookies()).set(SESSION_COOKIE, result.token, { httpOnly: true, sameSite: "lax", path: "/" });
     redirect("/");
   }
 
@@ -27,7 +27,7 @@ export default async function LoginPage({
         <button type="submit" style={{ marginLeft: 8 }}>
           进去
         </button>
-        {error ? <p className="error">登录码不对</p> : null}
+        {error ? <p className="error">{error}</p> : null}
       </form>
     </main>
   );
