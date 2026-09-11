@@ -148,3 +148,175 @@ describe("权限与租户隔离（真实 PostgreSQL）", () => {
     expect(Number(rows[0]?.count ?? 0)).toBeGreaterThan(0);
   });
 });
+
+/**
+ * acceptance.md 的最低自动化检查第 4、5 条写的是「不能读取**或修改**另一个
+ * organization / unit 的记录」。上面那一组只证明了读不到。
+ * 拿着另一家店的记录 id 去写的路径，单独验一遍。
+ */
+describe("跨租户的写操作（真实 PostgreSQL）", () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let mine: Tenant;
+  let otherOrg: Tenant;
+  let siblingUnitManagerToken: string;
+  let myEntryId: string;
+  let myEquipmentId: string;
+
+  beforeAll(async () => {
+    const created = await createTestApp();
+    app = created.app;
+    prisma = created.prisma;
+    await resetDatabase(prisma);
+
+    mine = await createTenant(prisma, "write-a");
+    otherOrg = await createTenant(prisma, "write-b");
+
+    const unit = await prisma.unit.create({
+      data: { organizationId: mine.organizationId, name: "write-a 二店" },
+    });
+    const manager = await prisma.user.create({
+      data: {
+        organizationId: mine.organizationId,
+        unitId: unit.id,
+        name: "二店店长",
+        role: "store_manager",
+        locale: "zh",
+        loginCode: "write-a2-manager",
+      },
+    });
+    await prisma.session.create({
+      data: { token: "write-a2-manager-token", userId: manager.id, expiresAt: new Date(Date.now() + 3_600_000) },
+    });
+    siblingUnitManagerToken = "write-a2-manager-token";
+
+    const entry = await prisma.formEntry.findFirstOrThrow({ where: { unitId: mine.unitId } });
+    myEntryId = entry.id;
+
+    const equipment = await prisma.equipment.create({
+      data: {
+        organizationId: mine.organizationId,
+        unitId: mine.unitId,
+        name: "冷藏柜 2",
+        linkTemplateId: mine.templateId,
+        linkColumnId: "c1",
+      },
+    });
+    myEquipmentId = equipment.id;
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  const http = () => request(app.getHttpServer());
+  const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+  it("另一个 organization 的店长作废不了这边的记录", async () => {
+    const response = await http()
+      .post(`/haccp/entries/${myEntryId}/void`)
+      .set(auth(otherOrg.managerToken))
+      .send({ reason: "我就想作废别人的" });
+    expect(response.status).toBe(404);
+
+    const after = await prisma.formEntry.findFirstOrThrow({ where: { id: myEntryId } });
+    expect(after.voidedAt).toBeNull();
+  });
+
+  it("同公司另一家门店的店长也作废不了", async () => {
+    const response = await http()
+      .post(`/haccp/entries/${myEntryId}/void`)
+      .set(auth(siblingUnitManagerToken))
+      .send({ reason: "跨店作废" });
+    expect(response.status).toBe(404);
+
+    const after = await prisma.formEntry.findFirstOrThrow({ where: { id: myEntryId } });
+    expect(after.voidedAt).toBeNull();
+  });
+
+  it("跨租户处理不了这边的异常", async () => {
+    for (const token of [otherOrg.managerToken, siblingUnitManagerToken]) {
+      const response = await http()
+        .post(`/haccp/manage/issues/${myEntryId}/resolve`)
+        .set(auth(token))
+        .send({ note: "跨租户处理" });
+      expect(response.status).toBe(404);
+    }
+
+    const after = await prisma.formEntry.findFirstOrThrow({ where: { id: myEntryId } });
+    expect(after.status).toBe("issue_open");
+    expect(after.resolvedById).toBeNull();
+  });
+
+  it("跨租户改不了这边表单的派单", async () => {
+    const response = await http()
+      .put(`/haccp/manage/templates/${mine.templateId}/assignment`)
+      .set(auth(otherOrg.managerToken))
+      .send({ shiftKind: "closing", fromDate: "2026-09-14" });
+    expect(response.status).toBe(404);
+
+    expect(await prisma.formAssignment.count({ where: { templateId: mine.templateId } })).toBe(0);
+  });
+
+  it("跨租户改不了这边的表单模板，也停用不了", async () => {
+    const save = await http()
+      .post(`/haccp/manage/templates/${mine.templateId}/versions`)
+      .set(auth(otherOrg.managerToken))
+      .send({ nameZh: "被别人改了", columns: [{ labelZh: "x", type: "text" }] });
+    expect(save.status).toBe(404);
+
+    const off = await http()
+      .put(`/haccp/manage/templates/${mine.templateId}/active`)
+      .set(auth(siblingUnitManagerToken))
+      .send({ active: false });
+    expect(off.status).toBe(404);
+
+    const template = await prisma.formTemplate.findFirstOrThrow({ where: { id: mine.templateId } });
+    expect(template.currentVersion).toBe(1);
+    expect(template.active).toBe(true);
+  });
+
+  it("跨租户给这边的设备开不了维修单", async () => {
+    const response = await http()
+      .post(`/haccp/manage/issues/${myEntryId}/resolve`)
+      .set(auth(otherOrg.managerToken))
+      .send({ equipmentId: myEquipmentId, workOrderNote: "跨租户报修" });
+    expect(response.status).toBe(404);
+    expect(await prisma.workOrder.count()).toBe(0);
+  });
+
+  it("跨租户排不了这边的班", async () => {
+    const response = await http()
+      .put("/haccp/manage/shifts")
+      .set(auth(otherOrg.managerToken))
+      .send({ date: "2026-09-14", kind: "opening", userIds: [mine.employeeId] });
+    // 别家店长拿这边的员工 id 排班：人不在他的名单里，按找不到处理
+    expect(response.status).toBe(404);
+    expect(await prisma.shiftAssignment.count({ where: { userId: mine.employeeId } })).toBe(0);
+  });
+
+  it("跨租户往这边的记录上传不了照片", async () => {
+    const response = await http()
+      .post(`/haccp/entries/${myEntryId}/photos`)
+      .set(auth(otherOrg.managerToken))
+      .attach("file", Buffer.from("fake"), { filename: "x.png", contentType: "image/png" });
+    expect(response.status).toBe(404);
+    expect(await prisma.fileObject.count()).toBe(0);
+  });
+
+  it("跨租户存不了草稿、提交不了记录", async () => {
+    const draft = await http()
+      .post("/haccp/drafts")
+      .set(auth(otherOrg.employeeToken))
+      .send({ templateId: mine.templateId, entryDate: "2026-09-10", values: { c1: 5 } });
+    expect(draft.status).toBe(404);
+
+    const submit = await http()
+      .post("/haccp/entries")
+      .set(auth(otherOrg.managerToken))
+      .send({ templateId: mine.templateId, entryDate: "2026-09-10", values: { c1: 5 } });
+    expect(submit.status).toBe(404);
+
+    expect(await prisma.formEntry.count({ where: { templateId: mine.templateId } })).toBe(1);
+  });
+});

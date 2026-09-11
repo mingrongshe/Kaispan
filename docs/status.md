@@ -84,7 +84,7 @@ c5，旧记录里 c5 的值会被新列错认，所以扫的是全部历史版�
 | --- | --- |
 | `pnpm typecheck` | 通过 |
 | `pnpm test` | 24 条单元测试通过 |
-| `pnpm test:integration` | 63 条集成测试通过，跑在真实 PostgreSQL 17 上 |
+| `pnpm test:integration` | 72 条集成测试通过，跑在真实 PostgreSQL 17 上 |
 | `pnpm build` | API 与前端都编译通过 |
 
 四条在两台机器上各跑过：一台 x86_64 Linux，一台 aarch64 Linux。`pnpm install` 到 `pnpm build`
@@ -134,11 +134,38 @@ tenant-scoped Prisma client、OpenAPI generated client、正式 AuditLog、Actio
 通知与部署流水线。照片现在落本地磁盘，正式接入时换对象存储 —— 换的只有 `FilesService`
 里那两个私有方法。
 
-`docs/acceptance.md` 的最低自动化检查六条已经全部有对应测试。人工完整流程走通了，
-但还没有把「重新登录之后记录仍在」单独作为一步记录下来（刷新验证过，重新登录没有）。
+`docs/acceptance.md` 的最低自动化检查六条已经全部有对应测试。`acceptance.md` 的人工完整流程已经整条走通，包括「重新登录之后记录仍在」这一步：
+清掉 cookie 后打开同一条记录会落到登录页，重新登录后值和纠正措施都还在；
+店长处理完之后员工刷新看到「异常已处理」和处理结果。
 
 月度表的表头列取模板的当前版本，每条记录的值按列 id 取。改过版的月份不串格，靠的是
 「新列不复用被删掉的 id」这条规则 —— 那条规则在第二批的编辑器里落实，现在只是依赖它。
+
+## 对着仓库文档逐条核过一遍（2026-09-11）
+
+把 `AGENTS.md`、`onboarding.md`、`docs/kaispan-compatibility.md`、`docs/acceptance.md`、
+`docs/kaispan-reference-map.md` 里的要求逐条对代码查了一次。查出三处，两处当场修了。
+
+**修了：跨租户的写没有测过。** `acceptance.md` 第 4、5 条写的是「不能读取**或修改**另一个
+organization / unit 的记录」，原来的测试只证明了读不到。补了 9 条：跨租户作废、处理异常、
+改派单、改模板、停用模板、开维修单、排班、传照片、存草稿与提交，全部拒掉且数据没变。
+边界本来就是对的，只是没有被证明过。
+
+**修了：环境变量和 `.env.example` 对不上。** `AGENTS.md` 要求「环境变量首次出现时同时创建或
+更新 `.env.example`」。`PORT` 和 `WEB_ORIGIN` 在 `main.ts` 里用了但没声明；
+`SESSION_SECRET` 和 `NEXT_PUBLIC_API_BASE_URL` 声明了但代码里从来没读过 —— 后者是死配置，
+正是这个项目自己的验收标准里「只存不读」那一类。现在两边一个不多一个不少。
+
+**没修，是个真缺口：输出 DTO。** `docs/kaispan-compatibility.md` 写的是「API 使用明确的
+输入、输出 DTO」。输入侧齐全（class-validator + `ApiProperty`，`ValidationPipe` 开了
+`whitelist` 和 `forbidNonWhitelisted`）；输出侧只有 `/auth/me` 有 `MeDto`，其余接口返回的是
+内联对象字面量，Swagger 里没有响应结构。改起来是机械活，但要动到每个 controller，没有擅自动。
+
+**另外一条不是缺口但要说明**：`canFillHaccp()` 用的 `operations.haccp.fill` 这个标识，
+是从 `docs/kaispan-compatibility.md` 的正文里取的，没有去 KaiSpan 主仓库的
+`packages/db/src/rbac-catalog.ts` 核对过 —— 按 `docs/kaispan-reference-map.md`，
+查主仓库需要项目负责人提供只读路径，本轮没有拿到，所以整个过程一次也没有访问过主仓库。
+真接入前这个标识值得核一眼。
 
 ## 已知的环境限制
 
