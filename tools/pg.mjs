@@ -121,6 +121,31 @@ function chownRecursive(target, uid, gid) {
   }
 }
 
+/**
+ * 端口、监听地址和 socket 目录写进 postgresql.conf，不走 pg_ctl 的 -o。
+ *
+ * -o 后面是一整个字符串，pg_ctl 自己按空格切。项目路径里只要有空格
+ * （比如 /Users/xxx/kaispan UI/...），socket 目录就会被切成两半，
+ * postgres 报 `invalid argument`。conf 文件里的值带单引号，空格是安全的。
+ *
+ * socket 放数据目录，是因为默认的 /var/run/postgresql 在很多沙箱和 macOS 上不存在也建不了。
+ */
+function writeConfig() {
+  const file = join(DATA_DIR, "postgresql.conf");
+  const marker = "# --- kaispan-haccp ---";
+  const base = existsSync(file) ? readFileSync(file, "utf8").split(marker)[0] : "";
+  const settings = [
+    marker,
+    `port = ${PORT}`,
+    "listen_addresses = '127.0.0.1'",
+    `unix_socket_directories = '${DATA_DIR.replaceAll("'", "''")}'`,
+    "",
+  ].join("\n");
+  writeFileSync(file, `${base.trimEnd()}\n\n${settings}`);
+  const as = unprivileged();
+  if (as) chownSync(file, as.uid, as.gid);
+}
+
 function initialise() {
   mkdirSync(DATA_DIR, { recursive: true });
   // 口令文件不能放数据目录里：initdb 见到目录非空（连点开头的文件也算）就拒绝初始化
@@ -166,8 +191,8 @@ async function start() {
   // 多半真的存在，只是完全不相干。这个脚本独占这个数据目录和这个端口。
   rmSync(join(DATA_DIR, "postmaster.pid"), { force: true });
 
-  // -k 把 unix socket 放进数据目录：默认的 /var/run/postgresql 在很多沙箱里不存在也建不了
-  run("pg_ctl", ["-D", DATA_DIR, "-l", LOG_FILE, "-o", `-p ${PORT} -k ${DATA_DIR} -c listen_addresses=127.0.0.1`, "-w", "-t", "60", "start"]);
+  writeConfig();
+  run("pg_ctl", ["-D", DATA_DIR, "-l", LOG_FILE, "-w", "-t", "60", "start"]);
   await ensureDatabases();
   console.log(`postgres 已在 127.0.0.1:${PORT}，库：${DATABASES.join(", ")}`);
 }
